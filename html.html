@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eurovision Song Prediction</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+            font-weight: 300;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 1em;
+        }
+
+        .label-info {
+            display: inline-block;
+            margin-left: 8px;
+            color: #999;
+            font-weight: 400;
+            font-size: 0.9em;
+        }
+
+        input[type="number"],
+        input[type="range"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        input[type="number"]:focus,
+        input[type="range"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input[type="number"] {
+            background-color: #f8f9fa;
+        }
+
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="range"] {
+            padding: 0;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #e0e0e0;
+            outline: none;
+            border-radius: 5px;
+            flex: 1;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #764ba2;
+            transform: scale(1.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            background: #764ba2;
+            transform: scale(1.2);
+        }
+
+        .range-value {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            min-width: 50px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .feature-description {
+            display: block;
+            margin-top: 5px;
+            color: #999;
+            font-size: 0.85em;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: #667eea;
+            background: #f0f3ff;
+        }
+
+        .feature-card label {
+            margin-bottom: 10px;
+        }
+
+        .tempo-container {
+            grid-column: 1 / -1;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-predict {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-predict:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-predict:active {
+            transform: translateY(0);
+        }
+
+        .btn-reset {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-reset:hover {
+            background: #d0d0d0;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-container {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f0f3ff;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .result-container.error {
+            background: #ffe0e0;
+            border-left-color: #ff6b6b;
+        }
+
+        .result-container.success {
+            background: #e0ffe0;
+            border-left-color: #51cf66;
+        }
+
+        .result-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .result-value {
+            color: #667eea;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .classification-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .classification-flop {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .classification-poor {
+            background: #ffa94d;
+            color: white;
+        }
+
+        .classification-average {
+            background: #ffd43b;
+            color: #333;
+        }
+
+        .classification-good {
+            background: #51cf66;
+            color: white;
+        }
+
+        .classification-excellent {
+            background: #4dabf7;
+            color: white;
+        }
+
+        .classification-winner {
+            background: #845ef7;
+            color: white;
+        }
+
+        .interpretation-text {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            color: #333;
+            line-height: 1.6;
+            font-style: italic;
+        }
+
+        .confidence-info {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .error-message {
+            background: #ffe0e0;
+            color: #c92a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .info-box {
+            background: #e7f5ff;
+            border-left: 4px solid #4dabf7;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 25px;
+            color: #1971c2;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #0b47b0;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎵 Eurovision Predictor 🎵</h1>
+            <p>Predict Your Song's Eurovision Score</p>
+        </div>
+
+        <!-- Info Box -->
+        <div class="info-box">
+            <strong>How it works:</strong>
+            Adjust the audio features below and click "Predict" to see your song's estimated Eurovision score based on our Gradient Boosting model.
+        </div>
+
+        <!-- Form -->
+        <form id="predictionForm">
+            <!-- Features Grid -->
+            <div class="features-grid">
+                <!-- Danceability (0-1) -->
+                <div class="feature-card">
+                    <div class="form-group">
+                        <label for="danceability">
+                            Danceability
+                            <span class="label-info">(0-1)</span>
+                        </label>
+                        <div class="range-container">
+                            <input 
+                                type="range" 
+                                id="danceabilityRange" 
+                                min="0" 
+                                max="1" 
+                                step="0.01" 
+                                value="0.5"
+                            >
+                            <span class="range-value" id="danceabilityValue">0.5</span>
+                        </div>
+                        <input 
+                            type="number" 
+                            id="danceability" 
+                            name="danceability" 
+                            min="0" 
+                            max="1" 
+                            step="0.01" 
+                            value="0.5" 
+                            required
+                        >
+                        <small class="feature-description">How suitable the song is for dancing</small>
+                    </div>
+                </div>
+
+                <!-- Energy (0-1) -->
+                <div class="feature-card">
+                    <div class="form-group">
+                        <label for="energy">
+                            Energy
+                            <span class="label-info">(0-1)</span>
+                        </label>
+                        <div class="range-container">
+                            <input 
+                                type="range" 
+                                id="energyRange" 
+                                min="0" 
+                                max="1" 
+                                step="0.01" 
+                                value="0.5"
+                            >
+                            <span class="range-value" id="energyValue">0.5</span>
+                        </div>
+                        <input 
+                            type="number" 
+                            id="energy" 
+                            name="energy" 
+                            min="0" 
+                            max="1" 
+                            step="0.01" 
+                            value="0.5" 
+                            required
+                        >
+                        <small class="feature-description">Intensity and activity level of the song</small>
+                    </div>
+                </div>
+
+                <!-- Valence (0-1) -->
+                <div class="feature-card">
+                    <div class="form-group">
+                        <label for="valence">
+                            Valence
+                            <span class="label-info">(0-1)</span>
+                        </label>
+                        <div class="range-container">
+                            <input 
+                                type="range" 
+                                id="valenceRange" 
+                                min="0" 
+                                max="1" 
+                                step="0.01" 
+                                value="0.5"
+                            >
+                            <span class="range-value" id="valenceValue">0.5</span>
+                        </div>
+                        <input 
+                            type="number" 
+                            id="valence" 
+                            name="valence" 
+                            min="0" 
+                            max="1" 
+                            step="0.01" 
+                            value="0.5" 
+                            required
+                        >
+                        <small class="feature-description">Musical positiveness/happiness conveyed</small>
+                    </div>
+                </div>
+
+                <!-- Acousticness (0-1) -->
+                <div class="feature-card">
+                    <div class="form-group">
+                        <label for="acousticness">
+                            Acousticness
+                            <span class="label-info">(0-1)</span>
+                        </label>
+                        <div class="range-container">
+                            <input 
+                                type="range" 
+                                id="acousticnessRange" 
+                                min="0" 
+                                max="1" 
+                                step="0.01" 
+                                value="0.5"
+                            >
+                            <span class="range-value" id="acousticnessValue">0.5</span>
+                        </div>
+                        <input 
+                            type="number" 
+                            id="acousticness" 
+                            name="acousticness" 
+                            min="0" 
+                            max="1" 
+                            step="0.01" 
+                            value="0.5" 
+                            required
+                        >
+                        <small class="feature-description">Likelihood of being acoustically recorded</small>
+                    </div>
+                </div>
+
+                <!-- Tempo (BPM) -->
+                <div class="feature-card tempo-container">
+                    <div class="form-group">
+                        <label for="tempo">
+                            Tempo
+                            <span class="label-info">(BPM)</span>
+                        </label>
+                        <div class="range-container">
+                            <input 
+                                type="range" 
+                                id="tempoRange" 
+                                min="0" 
+                                max="300" 
+                                step="1" 
+                                value="120"
+                            >
+                            <span class="range-value" id="tempoValue">120</span>
+                        </div>
+                        <input 
+                            type="number" 
+                            id="tempo" 
+                            name="tempo" 
+                            min="0" 
+                            max="300" 
+                            step="1" 
+                            value="120" 
+                            required
+                        >
+                        <small class="feature-description">Beats per minute of the song</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="button-group">
+                <button type="submit" class="btn-predict">🎯 Predict Score</button>
+                <button type="reset" class="btn-reset">↻ Reset</button>
+            </div>
+        </form>
+
+        <!-- Loading Spinner -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px; color: #666;">Processing your prediction...</p>
+        </div>
+
+        <!-- Results Container -->
+        <div class="result-container" id="resultContainer">
+            <!-- Results will be displayed here -->
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Sync range and number inputs
+        const features = ['danceability', 'energy', 'valence', 'acousticness', 'tempo'];
+
+        features.forEach(feature => {
+            const rangeInput = document.getElementById(`${feature}Range`);
+            const numberInput = document.getElementById(feature);
+            const valueDisplay = document.getElementById(`${feature}Value`);
+
+            // Range to Number
+            rangeInput.addEventListener('input', () => {
+                numberInput.value = rangeInput.value;
+                valueDisplay.textContent = rangeInput.value;
+            });
+
+            // Number to Range
+            numberInput.addEventListener('input', () => {
+                rangeInput.value = numberInput.value;
+                valueDisplay.textContent = numberInput.value;
+            });
+        });
+
+        // Form Submission
+        document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const loading = document.getElementById('loading');
+            const resultContainer = document.getElementById('resultContainer');
+
+            // Show loading spinner
+            loading.style.display = 'block';
+            resultContainer.style.display = 'none';
+
+            // Prepare data
+            const formData = {
+                danceability: parseFloat(document.getElementById('danceability').value),
+                energy: parseFloat(document.getElementById('energy').value),
+                valence: parseFloat(document.getElementById('valence').value),
+                tempo: parseFloat(document.getElementById('tempo').value),
+                acousticness: parseFloat(document.getElementById('acousticness').value)
+            };
+
+            try {
+                // Send request to Flask API
+                const response = await fetch('http://localhost:5000/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                // Hide loading spinner
+                loading.style.display = 'none';
+
+                if (data.success) {
+                    // Display success result
+                    displaySuccessResult(data);
+                } else {
+                    // Display error result
+                    displayErrorResult(data);
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                displayErrorResult({
+                    error: 'Connection Error: Make sure Flask server is running on http://localhost:5000'
+                });
+            }
+        });
+
+        function displaySuccessResult(data) {
+            const resultContainer = document.getElementById('resultContainer');
+            const classification = data.classification.toLowerCase();
+
+            const classificationClass = `classification-${classification}`;
+
+            resultContainer.innerHTML = `
+                <div class="result-title">
+                    ✅ Prediction Complete
+                </div>
+
+                <div class="result-item">
+                    <span class="result-label">Predicted Score:</span>
+                    <span class="result-value">${data.predicted_score} points</span>
+                </div>
+
+                <div>
+                    <span class="result-label">Classification:</span>
+                    <span class="classification-badge ${classificationClass}">
+                        ${data.classification}
+                    </span>
+                </div>
+
+                <div class="confidence-info">
+                    <strong>Confidence Level:</strong> ${data.confidence_level}<br>
+                    <strong>Prediction Range:</strong> ${data.prediction_range} points<br>
+                    <strong>Margin of Error:</strong> ${data.mae_margin}
+                </div>
+
+                <div class="interpretation-text">
+                    📊 <strong>Interpretation:</strong><br>
+                    ${data.interpretation}
+                </div>
+
+                <div class="confidence-info">
+                    <strong>Model Information:</strong><br>
+                    Model: ${data.model_info.model_name}<br>
+                    Accuracy: ${data.model_info.accuracy}<br>
+                    R² Score: ${data.model_info.r_squared}
+                </div>
+            `;
+
+            resultContainer.classList.remove('error');
+            resultContainer.classList.add('success');
+            resultContainer.style.display = 'block';
+        }
+
+        function displayErrorResult(data) {
+            const resultContainer = document.getElementById('resultContainer');
+
+            resultContainer.innerHTML = `
+                <div class="result-title">
+                    ⚠️ Error Occurred
+                </div>
+                <div class="error-message">
+                    ${data.error || 'An unknown error occurred'}
+                </div>
+                ${data.validation_errors ? `
+                    <div class="error-message">
+                        <strong>Validation Errors:</strong>
+                        <ul>
+                            ${data.validation_errors.map(err => `<li>${err}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+            `;
+
+            resultContainer.classList.remove('success');
+            resultContainer.classList.add('error');
+            resultContainer.style.display = 'block';
+        }
+
+        // Reset form
+        document.getElementById('predictionForm').addEventListener('reset', () => {
+            document.getElementById('resultContainer').style.display = 'none';
+            setTimeout(() => {
+                features.forEach(feature => {
+                    const rangeInput = document.getElementById(`${feature}Range`);
+                    const valueDisplay = document.getElementById(`${feature}Value`);
+                    valueDisplay.textContent = rangeInput.value;
+                });
+            }, 100);
+        });
+    </script>
+</body>
+
+</html>
